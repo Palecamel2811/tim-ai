@@ -1,42 +1,51 @@
 @import "tailwindcss";
 
 /*
- * TIM AI — Celestial design system
+ * TIM AI — Deep Space / Chill-Hop design system
  *
- * Palette: cloud-white backgrounds, clear-sky blues, metallic silver accents.
- * Futuristic minimalism — knob-style rounded controls, thin borders, no noise.
+ * Three material layers:
+ *   1. Space     — deep navy backgrounds, silver light, TIM's world
+ *   2. Silver    — TIM's presence, text, the sphere
+ *   3. Wood      — the bottom nav, warm grounding trim (Option C)
+ *
+ * Plus: faint fern plants at 8–12% opacity on key screens.
+ * Aesthetic reference: lo-fi hip hop — warm, organic, late night, alive.
  */
+
 :root {
-  /* Backgrounds */
-  --tim-bg:        #EEF2FA;   /* cool near-white — cloud light          */
-  --tim-surface:   #FFFFFF;   /* pure white cards                        */
-  --tim-surface-2: #E4EAF6;   /* nested surfaces, input fills            */
-  --tim-surface-3: #D8E2F4;   /* deepest surface layer                   */
+  /* ── Space ── */
+  --tim-bg:          #0A0E1A;
+  --tim-surface:     #12192A;
+  --tim-surface-2:   #1A2235;
+  --tim-surface-3:   #222D42;
+  --tim-border:      #2A3550;
+  --tim-border-focus:#6A8AC8;
 
-  /* Borders */
-  --tim-border:       #C8D4EC; /* default border                          */
-  --tim-border-focus: #6A9FD8; /* focused / active border                 */
+  /* ── Silver / TIM's light ── */
+  --tim-text:        #F0F4FF;
+  --tim-muted:       #6A7A9A;
+  --tim-subtle:      #3A4A6A;
+  --tim-accent:      #B8C8E8;
+  --tim-sphere:      #C8D4F0;
+  --tim-blue:        #7A9FD9;
 
-  /* Text */
-  --tim-text:    #1A2038;     /* deep navy — primary text                */
-  --tim-muted:   #5A6A8A;     /* blue-grey muted text                    */
-  --tim-subtle:  #8A9AB8;     /* placeholder / very low emphasis         */
+  /* ── Wood (nav trim) ── */
+  --tim-wood-lt:     #A0714F;
+  --tim-wood-mid:    #8B5E3C;
+  --tim-wood-dk:     #6B4423;
 
-  /* Accents */
-  --tim-blue:    #4A8FD9;     /* primary CTA — clear sky blue            */
-  --tim-blue-lt: #D6E8F8;     /* blue tint for badges / highlights       */
-  --tim-silver:  #B8C8E0;     /* metallic silver — decorative            */
-  --tim-elder:   #8078C8;     /* Elder AI — cooled violet                */
-  --tim-elder-lt:#E4E0F8;     /* Elder AI tint                           */
+  /* ── Fern (organic life) ── */
+  --tim-fern:        #4A6A4A;
+  --tim-fern-lt:     #6A8A6A;
 
-  /* Status */
-  --tim-red:     #D95050;     /* recording / error                       */
-  --tim-green:   #4AAE8C;     /* success / saved                         */
+  /* ── Status ── */
+  --tim-red:         #E05870;
+  --tim-elder:       #8878D0;
+  --tim-elder-lt:    #2A2050;
+  --tim-green:       #4AAEA0;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html, body, #root {
   height: 100%;
@@ -51,123 +60,178 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Waveform bar animation ─────────────────────────────────────────────── */
+/* ─── Wood grain — CSS texture (no image needed) ─────────────────── */
+.wood-grain {
+  background:
+    repeating-linear-gradient(
+      92deg,
+      transparent,
+      transparent 2px,
+      rgba(160,113,79,0.08) 2px,
+      rgba(160,113,79,0.08) 3px
+    ),
+    repeating-linear-gradient(
+      88deg,
+      transparent,
+      transparent 4px,
+      rgba(107,68,35,0.06) 4px,
+      rgba(107,68,35,0.06) 5px
+    ),
+    linear-gradient(
+      180deg,
+      #1A100A 0%,
+      #0F0A06 40%,
+      #1A100A 100%
+    );
+}
+
+/* ─── Fern SVG background utility ───────────────────────────────── */
+.fern-bg {
+  position: relative;
+  overflow: hidden;
+}
+.fern-bg::before,
+.fern-bg::after {
+  content: '';
+  position: absolute;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  opacity: 0.09;
+  z-index: 0;
+}
+/* Bottom-left fern */
+.fern-bg::before {
+  bottom: -20px;
+  left: -30px;
+  width: 220px;
+  height: 220px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='%234A6A4A'%3E%3Cellipse cx='100' cy='180' rx='4' ry='30' transform='rotate(-10 100 180)'/%3E%3Cellipse cx='100' cy='180' rx='3' ry='25' transform='rotate(10 100 180)'/%3E%3Cellipse cx='80' cy='150' rx='28' ry='8' transform='rotate(-35 80 150)'/%3E%3Cellipse cx='120' cy='145' rx='28' ry='8' transform='rotate(35 120 145)'/%3E%3Cellipse cx='65' cy='125' rx='24' ry='7' transform='rotate(-45 65 125)'/%3E%3Cellipse cx='135' cy='120' rx='24' ry='7' transform='rotate(45 135 120)'/%3E%3Cellipse cx='55' cy='100' rx='20' ry='6' transform='rotate(-55 55 100)'/%3E%3Cellipse cx='145' cy='96' rx='20' ry='6' transform='rotate(55 145 96)'/%3E%3Cellipse cx='50' cy='78' rx='16' ry='5' transform='rotate(-60 50 78)'/%3E%3Cellipse cx='150' cy='74' rx='16' ry='5' transform='rotate(60 150 74)'/%3E%3Cellipse cx='100' cy='60' rx='12' ry='4' transform='rotate(-20 100 60)'/%3E%3Cellipse cx='100' cy='55' rx='12' ry='4' transform='rotate(20 100 55)'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Bottom-right fern (mirrored, smaller) */
+.fern-bg::after {
+  bottom: -10px;
+  right: -20px;
+  width: 160px;
+  height: 160px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='%234A6A4A'%3E%3Cellipse cx='100' cy='180' rx='4' ry='30' transform='rotate(10 100 180)'/%3E%3Cellipse cx='80' cy='150' rx='28' ry='8' transform='rotate(35 80 150)'/%3E%3Cellipse cx='120' cy='145' rx='28' ry='8' transform='rotate(-35 120 145)'/%3E%3Cellipse cx='65' cy='125' rx='24' ry='7' transform='rotate(45 65 125)'/%3E%3Cellipse cx='135' cy='120' rx='24' ry='7' transform='rotate(-45 135 120)'/%3E%3Cellipse cx='55' cy='100' rx='20' ry='6' transform='rotate(55 55 100)'/%3E%3C/g%3E%3C/svg%3E");
+  transform: scaleX(-1);
+  opacity: 0.06;
+}
+
+/* ─── Waveform bar ───────────────────────────────────────────────── */
 @keyframes waveBar {
   0%, 100% { transform: scaleY(0.3); }
   50%       { transform: scaleY(1); }
 }
+.wave-bar { animation: waveBar 0.8s ease-in-out infinite; }
 
-.wave-bar {
-  animation: waveBar 0.8s ease-in-out infinite;
-}
-
-/* ─── TIM cursor blink (TIMVoice typing effect) ──────────────────────────── */
+/* ─── TIM cursor blink ───────────────────────────────────────────── */
 @keyframes timCursorBlink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+.tim-cursor { animation: timCursorBlink 0.65s ease-in-out infinite; }
 
-.tim-cursor {
-  animation: timCursorBlink 0.7s ease-in-out infinite;
-}
-
-/* ─── Page enter transition ──────────────────────────────────────────────── */
+/* ─── Page enter ─────────────────────────────────────────────────── */
 @keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.page-enter { animation: pageEnter 0.22s ease-out forwards; }
+
+/* ─── Sphere: ambient breathe ────────────────────────────────────── */
+@keyframes sphereBreathe {
+  0%, 100% { transform: scale(1);    filter: brightness(1);   }
+  50%       { transform: scale(1.04); filter: brightness(1.12); }
+}
+.sphere-breathe { animation: sphereBreathe 3.2s ease-in-out infinite; }
+
+/* ─── Sphere: thinking (generating) ─────────────────────────────── */
+@keyframes sphereThink {
+  0%   { transform: scale(0.97) rotate(0deg);   filter: brightness(1.1);  }
+  50%  { transform: scale(1.03) rotate(180deg); filter: brightness(1.3);  }
+  100% { transform: scale(0.97) rotate(360deg); filter: brightness(1.1);  }
+}
+.sphere-think { animation: sphereThink 1.8s linear infinite; }
+
+/* ─── Sphere: listening (mic active) ────────────────────────────── */
+@keyframes sphereListen {
+  0%, 100% { transform: scale(1);    }
+  25%       { transform: scale(1.06); }
+  75%       { transform: scale(0.97); }
+}
+.sphere-listen { animation: sphereListen 0.6s ease-in-out infinite; }
+
+/* ─── Sphere tile shimmer ────────────────────────────────────────── */
+@keyframes tileShimmer {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 1;   transform: scale(1.08); }
 }
 
-.page-enter {
-  animation: pageEnter 0.22s ease-out forwards;
-}
-
-/* ─── TIM orb — nav logo ambient pulse ──────────────────────────────────── */
+/* ─── Orb pulse (nav logo) ───────────────────────────────────────── */
 @keyframes timOrbPulse {
-  0%, 100% { transform: scale(1);    opacity: 0.25; }
-  50%       { transform: scale(1.7); opacity: 0.06; }
+  0%, 100% { transform: scale(1);    opacity: 0.3; }
+  50%       { transform: scale(1.8); opacity: 0.06; }
 }
+.tim-orb-pulse { animation: timOrbPulse 3.2s ease-in-out infinite; }
 
-.tim-orb-pulse {
-  animation: timOrbPulse 3.2s ease-in-out infinite;
-}
-
-/* ─── Mic orb — idle breathing glow ─────────────────────────────────────── */
+/* ─── Mic idle glow ──────────────────────────────────────────────── */
 @keyframes micBreath {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(74, 143, 217, 0.45); }
-  50%       { box-shadow: 0 0 0 18px rgba(74, 143, 217, 0);   }
+  0%, 100% { box-shadow: 0 0 0 0    rgba(184,200,232,0.4); }
+  50%       { box-shadow: 0 0 0 18px rgba(184,200,232,0);   }
 }
+.mic-idle { animation: micBreath 2.6s ease-in-out infinite; }
 
-.mic-idle {
-  animation: micBreath 2.6s ease-in-out infinite;
-}
-
-/* ─── Mic orb — recording throb ─────────────────────────────────────────── */
+/* ─── Mic recording throb ────────────────────────────────────────── */
 @keyframes micThrob {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(217, 80, 80, 0.65); }
-  50%       { box-shadow: 0 0 0 22px rgba(217, 80, 80, 0);   }
+  0%, 100% { box-shadow: 0 0 0 0    rgba(224,88,112,0.65); }
+  50%       { box-shadow: 0 0 0 22px rgba(224,88,112,0);    }
 }
+.mic-recording { animation: micThrob 0.85s ease-in-out infinite; }
 
-.mic-recording {
-  animation: micThrob 0.85s ease-in-out infinite;
-}
-
-/* ─── TIM thinking — generative pulse ring ───────────────────────────────── */
+/* ─── TIM thinking ring (generate button) ───────────────────────── */
 @keyframes timThink {
   0%   { transform: scale(0.94); opacity: 0.55; }
   50%  { transform: scale(1.12); opacity: 0.12; }
   100% { transform: scale(0.94); opacity: 0.55; }
 }
+.tim-thinking-ring { animation: timThink 1.5s ease-in-out infinite; }
 
-.tim-thinking-ring {
-  animation: timThink 1.5s ease-in-out infinite;
-}
-
-/* ─── Memory card stagger entrance ──────────────────────────────────────── */
+/* ─── Card stagger entrance ──────────────────────────────────────── */
 @keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
-
 .card-enter {
   animation: cardEnter 0.32s ease-out forwards;
   opacity: 0;
 }
 
-/* ─── Save celebration burst ─────────────────────────────────────────────── */
+/* ─── Save burst ─────────────────────────────────────────────────── */
 @keyframes saveBurst {
   0%   { transform: scale(1);    }
   30%  { transform: scale(1.04); }
   60%  { transform: scale(0.98); }
   100% { transform: scale(1);    }
 }
+.save-burst { animation: saveBurst 0.38s ease-out forwards; }
 
-.save-burst {
-  animation: saveBurst 0.38s ease-out forwards;
-}
-
-/* ─── Metallic knob ring — decorative concentric border on round buttons ─── */
+/* ─── Knob ring (round button hardware feel) ─────────────────────── */
 .knob {
   box-shadow:
     0 0 0 1px var(--tim-border),
     0 0 0 4px var(--tim-surface),
-    0 0 0 5px var(--tim-silver);
+    0 0 0 5px var(--tim-accent);
 }
-
 .knob-active {
   box-shadow:
     0 0 0 1px var(--tim-border-focus),
     0 0 0 4px var(--tim-surface),
     0 0 0 5px var(--tim-blue);
 }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--tim-subtle); border-radius: 2px; }

@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 
 /**
  * TIMVoice — TIM's animated speech bubble with typewriter effect.
+ * The cursor blinks in silver-blue until the sentence completes.
  */
-export default function TIMVoice({ line = '', speed = 28, className = '', dim = false }) {
+export default function TIMVoice({ line = '', speed = 26, className = '', dim = false }) {
   const [displayed, setDisplayed] = useState('')
   const [done, setDone]           = useState(false)
   const timeoutRef                = useRef(null)
@@ -29,22 +30,19 @@ export default function TIMVoice({ line = '', speed = 28, className = '', dim = 
       }
     }
 
-    timeoutRef.current = setTimeout(type, 120)
+    timeoutRef.current = setTimeout(type, 140)
     return () => clearTimeout(timeoutRef.current)
   }, [line, speed])
 
   return (
-    <p
-      className={`
-        text-[#1A2038] text-lg text-center leading-relaxed italic
-        transition-opacity duration-500
-        ${dim ? 'opacity-40' : 'opacity-75'}
-        ${className}
-      `}
-    >
+    <p className={`text-[#F0F4FF] text-lg text-center leading-relaxed italic
+                   transition-opacity duration-500
+                   ${dim ? 'opacity-35' : 'opacity-90'}
+                   ${className}`}>
       "{displayed}
       {!done && (
-        <span className="inline-block w-[2px] h-[1em] bg-[#4A8FD9] ml-[1px] align-middle tim-cursor" />
+        <span className="inline-block w-[2px] h-[1em] bg-[#B8C8E8]
+                         ml-[1px] align-middle tim-cursor" />
       )}
       {done && '"'}
     </p>
