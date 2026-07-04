@@ -1,38 +1,64 @@
 import { NavLink } from 'react-router-dom'
-import { Mic, Music2, BookHeart, NotebookPen } from 'lucide-react'
+import { Mic, Music2, BookHeart, NotebookPen, Brain } from 'lucide-react'
+import { getProfileCompletion } from '../utils/timProfile'
 
 const links = [
-  { to: '/record',   label: 'Record',   Icon: Mic          },
-  { to: '/create',   label: 'Create',   Icon: Music2       },
-  { to: '/journal',  label: 'Journal',  Icon: NotebookPen  },
-  { to: '/memories', label: 'Memories', Icon: BookHeart    },
+  { to: '/record',   label: 'Record',   Icon: Mic,         elder: false },
+  { to: '/create',   label: 'Create',   Icon: Music2,      elder: false },
+  { to: '/journal',  label: 'Journal',  Icon: NotebookPen, elder: false },
+  { to: '/memories', label: 'Memories', Icon: BookHeart,   elder: false },
+  { to: '/elder',    label: 'Elder',    Icon: Brain,       elder: true  },
 ]
 
 export default function Nav() {
+  const elderPct = getProfileCompletion()
+
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A2A]">
-      {/* Logo */}
-      <div className="flex items-center gap-2">
-        <span className="text-[#F5C842] font-bold text-xl tracking-tight">TIM</span>
-        <span className="text-[#F5E6C8] text-xs tracking-widest uppercase opacity-60">This Is Mine</span>
+    <header className="flex items-center justify-between px-6 py-3.5
+                       bg-white border-b border-[#C8D4EC]">
+      {/* Logo mark */}
+      <div className="flex items-center gap-2.5">
+        {/* TIM orb — blue on light */}
+        <div className="relative w-7 h-7 shrink-0">
+          <div className="absolute inset-0 rounded-full bg-[#4A8FD9] opacity-20 tim-orb-pulse" />
+          <div className="absolute inset-[3px] rounded-full bg-[#4A8FD9]" />
+        </div>
+        <div className="flex flex-col leading-none">
+          <span className="text-[#1A2038] font-bold text-base tracking-tight">TIM</span>
+          <span className="text-[#8A9AB8] text-[10px] tracking-widest uppercase hidden sm:block">
+            This Is Mine
+          </span>
+        </div>
       </div>
 
       {/* Nav links */}
-      <nav className="flex items-center gap-1">
-        {links.map(({ to, label, Icon }) => (
+      <nav className="flex items-center gap-0.5">
+        {links.map(({ to, label, Icon, elder }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200
+              `relative flex items-center gap-1.5 px-3 py-2 rounded-full text-sm
+               transition-all duration-200 font-medium
                ${isActive
-                 ? 'bg-[#F5C842] text-[#0D0D0D] font-semibold'
-                 : 'text-[#F5E6C8] opacity-50 hover:opacity-100'
+                 ? elder
+                   ? 'bg-[#8078C8] text-white'
+                   : 'bg-[#4A8FD9] text-white'
+                 : 'text-[#5A6A8A] hover:text-[#1A2038] hover:bg-[#E4EAF6]'
                }`
             }
           >
-            <Icon size={15} />
+            <Icon size={14} />
             <span className="hidden sm:inline">{label}</span>
+            {/* Elder progress pip */}
+            {elder && elderPct > 0 && elderPct < 100 && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full
+                               bg-[#8078C8] ring-2 ring-white" />
+            )}
+            {elder && elderPct === 100 && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full
+                               bg-[#4AAE8C] ring-2 ring-white" />
+            )}
           </NavLink>
         ))}
       </nav>

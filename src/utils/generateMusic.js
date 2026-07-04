@@ -25,7 +25,7 @@ async function uploadHumToReplicate(blobUrl, token) {
  * generateMusic — calls the Replicate MusicGen API via our Vercel serverless proxy.
  * Takes the detected notes + style choice + hum blob URL, returns generated audio URL.
  */
-export async function generateMusic({ notes, style, durationSeconds = 15, humBlobUrl = null }) {
+export async function generateMusic({ notes, style, durationSeconds = 15, humBlobUrl = null, profileSummary = '' }) {
 
   // Analyze the hum: range, density, and movement shape the prompt
   const uniqueNotes = [...new Set(notes.map(n => n.note))]
@@ -94,12 +94,14 @@ export async function generateMusic({ notes, style, durationSeconds = 15, humBlo
   }
 
   const descriptors = stylePrompts[style] || [style]
-  const prompt = [
+  const promptParts = [
     descriptors.join(', '),
     melodicCharacter,
     tempoFeel,
     'high quality professional music production, full arrangement',
-  ].join(', ')
+  ]
+  if (profileSummary) promptParts.push(profileSummary)
+  const prompt = promptParts.join(', ')
 
   // Pass the hum blob URL so the backend can use it for melody conditioning
   const response = await fetch('/api/generate', {

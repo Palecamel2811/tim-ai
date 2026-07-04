@@ -1,22 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
 import { Mic, Square, Flame, ChevronDown, Check, BookOpen, Volume2 } from 'lucide-react'
 import { getTodaysPrompt, getJournalStreak } from '../utils/journalPrompts'
+import TIMVoice from '../components/TIMVoice'
+import { getJournalDialogue } from '../utils/timPersonality'
 
 const FREQUENCIES  = ['daily', 'weekly', 'monthly']
 const PROMPT_TYPES = [
-  { id: 'daily',        label: "Today's Check-In",   emoji: '🌅' },
-  { id: 'weekly',       label: 'Weekly Reflection',  emoji: '🌿' },
-  { id: 'monthly',      label: 'Deep Dive',          emoji: '🌊' },
-  { id: 'sonic_memory', label: 'Sonic Memory',       emoji: '🎧' },
+  { id: 'daily',        label: "Today's Check-In" },
+  { id: 'weekly',       label: 'Weekly Reflection' },
+  { id: 'monthly',      label: 'Deep Dive' },
+  { id: 'sonic_memory', label: 'Sonic Memory' },
 ]
 
 const MOODS = [
-  { id: 'open',     label: 'Open',     color: '#4ade80' },
-  { id: 'heavy',    label: 'Heavy',    color: '#a78bfa' },
-  { id: 'grateful', label: 'Grateful', color: '#F5C842' },
-  { id: 'stuck',    label: 'Stuck',    color: '#f87171' },
-  { id: 'curious',  label: 'Curious',  color: '#60a5fa' },
-  { id: 'raw',      label: 'Raw',      color: '#fb923c' },
+  { id: 'open',     label: 'Open',     color: '#4AAE8C' },
+  { id: 'heavy',    label: 'Heavy',    color: '#8078C8' },
+  { id: 'grateful', label: 'Grateful', color: '#4A8FD9' },
+  { id: 'stuck',    label: 'Stuck',    color: '#D95050' },
+  { id: 'curious',  label: 'Curious',  color: '#5AA0D9' },
+  { id: 'raw',      label: 'Raw',      color: '#C47A3A' },
 ]
 
 export default function JournalScreen() {
@@ -31,6 +33,7 @@ export default function JournalScreen() {
   const [streak, setStreak]                       = useState(0)
   const [entries, setEntries]                     = useState([])
   const [showHistory, setShowHistory]             = useState(false)
+  const [timLine, setTimLine]                     = useState('')
   const [frequency, setFrequency]                 = useState(
     localStorage.getItem('tim_journal_frequency') || 'daily'
   )
@@ -49,9 +52,9 @@ export default function JournalScreen() {
     setEntryText('')
     setSelectedMood(null)
     setVoiceBlobUrl(null)
+    setTimLine(getJournalDialogue('prompt'))
   }, [activePromptType])
 
-  // Voice recording
   async function startVoice() {
     chunksRef.current = []
     const stream   = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -98,13 +101,14 @@ export default function JournalScreen() {
     setEntries(updated)
     setStreak(getJournalStreak())
     setSaved(true)
+    setTimLine(getJournalDialogue('saved'))
 
-    // Reset after brief celebration
     setTimeout(() => {
       setEntryText('')
       setSelectedMood(null)
       setVoiceBlobUrl(null)
-    }, 1200)
+      setTimLine(getJournalDialogue('prompt'))
+    }, 1800)
   }
 
   function setJournalFrequency(freq) {
@@ -124,35 +128,36 @@ export default function JournalScreen() {
       {/* Top bar — streak + frequency */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Flame size={18} className="text-[#F5C842]" />
-          <span className="text-[#F5C842] font-bold text-sm">
+          <Flame size={16} className="text-[#4A8FD9]" />
+          <span className="text-[#4A8FD9] font-semibold text-sm">
             {streak} day{streak !== 1 ? 's' : ''}
           </span>
-          <span className="text-[#F5E6C8] text-xs opacity-40">streak</span>
+          <span className="text-[#8A9AB8] text-xs">streak</span>
         </div>
 
         {/* Frequency picker */}
         <div className="relative">
           <button
             onClick={() => setShowFreqPicker(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A1A1A] border border-[#2A2A2A]
-                       rounded-full text-xs text-[#F5E6C8] opacity-60 hover:opacity-100 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#C8D4EC]
+                       rounded-full text-xs text-[#5A6A8A] hover:border-[#6A9FD8]
+                       hover:text-[#1A2038] transition-all"
           >
             <BookOpen size={12} />
             {frequency.charAt(0).toUpperCase() + frequency.slice(1)} check-ins
             <ChevronDown size={12} />
           </button>
           {showFreqPicker && (
-            <div className="absolute right-0 top-8 bg-[#1A1A1A] border border-[#2A2A2A]
-                            rounded-xl overflow-hidden z-10 min-w-32 shadow-xl">
+            <div className="absolute right-0 top-9 bg-white border border-[#C8D4EC]
+                            rounded-xl overflow-hidden z-10 min-w-36 shadow-lg shadow-[#C8D4EC]/40">
               {FREQUENCIES.map(f => (
                 <button
                   key={f}
                   onClick={() => setJournalFrequency(f)}
                   className={`w-full text-left px-4 py-2.5 text-sm transition-colors
                     ${frequency === f
-                      ? 'text-[#F5C842] bg-[#F5C842]/10'
-                      : 'text-[#F5E6C8] opacity-60 hover:opacity-100 hover:bg-[#2A2A2A]'
+                      ? 'text-[#4A8FD9] bg-[#D6E8F8]'
+                      : 'text-[#5A6A8A] hover:bg-[#E4EAF6] hover:text-[#1A2038]'
                     }`}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -163,38 +168,39 @@ export default function JournalScreen() {
         </div>
       </div>
 
-      {/* Prompt type tabs */}
+      {/* Prompt type tabs — no emojis */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {PROMPT_TYPES.map(pt => (
           <button
             key={pt.id}
             onClick={() => setActivePromptType(pt.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap
-                        transition-all duration-200 shrink-0
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs
+                        whitespace-nowrap transition-all duration-200 shrink-0 font-medium
                         ${activePromptType === pt.id
-                          ? 'bg-[#F5C842] text-[#0D0D0D] font-semibold'
-                          : 'bg-[#1A1A1A] border border-[#2A2A2A] text-[#F5E6C8] opacity-50 hover:opacity-100'
+                          ? 'bg-[#4A8FD9] text-white'
+                          : 'bg-white border border-[#C8D4EC] text-[#5A6A8A] hover:border-[#6A9FD8] hover:text-[#1A2038]'
                         }`}
           >
-            <span>{pt.emoji}</span>
-            <span>{pt.label}</span>
+            {pt.label}
           </button>
         ))}
       </div>
 
-      {/* The prompt */}
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6">
-        <p className="text-[#F5E6C8] text-xs opacity-40 uppercase tracking-widest mb-3">
-          TIM asks
-        </p>
-        <p className="text-[#F5E6C8] text-lg leading-relaxed italic">
+      {/* The prompt card */}
+      <div className="bg-white border border-[#C8D4EC] rounded-2xl p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-[#8A9AB8] text-xs uppercase tracking-widest">
+            {timLine || 'TIM asks'}
+          </p>
+        </div>
+        <p className="text-[#1A2038] text-lg leading-relaxed italic">
           "{prompt}"
         </p>
       </div>
 
       {/* Mood selector */}
       <div>
-        <p className="text-[#F5E6C8] text-xs opacity-40 uppercase tracking-widest mb-3">
+        <p className="text-[#8A9AB8] text-xs uppercase tracking-widest mb-3">
           How are you feeling right now?
         </p>
         <div className="flex gap-2 flex-wrap">
@@ -204,13 +210,10 @@ export default function JournalScreen() {
               onClick={() => setSelectedMood(m => m?.id === mood.id ? null : mood)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border
                 ${selectedMood?.id === mood.id
-                  ? 'border-transparent text-[#0D0D0D]'
-                  : 'border-[#2A2A2A] text-[#F5E6C8] opacity-50 hover:opacity-100'
+                  ? 'border-transparent text-white'
+                  : 'border-[#C8D4EC] text-[#5A6A8A] bg-white hover:border-[#6A9FD8]'
                 }`}
-              style={selectedMood?.id === mood.id
-                ? { backgroundColor: mood.color }
-                : {}
-              }
+              style={selectedMood?.id === mood.id ? { backgroundColor: mood.color } : {}}
             >
               {mood.label}
             </button>
@@ -220,51 +223,47 @@ export default function JournalScreen() {
 
       {/* Write it */}
       <div className="flex flex-col gap-2">
-        <p className="text-[#F5E6C8] text-xs opacity-40 uppercase tracking-widest">
-          Write it out
-        </p>
+        <p className="text-[#8A9AB8] text-xs uppercase tracking-widest">Write it out</p>
         <textarea
           value={entryText}
           onChange={e => setEntryText(e.target.value)}
           rows={5}
           placeholder="Don't think. Don't edit. Just let it come out."
-          className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4
-                     text-[#F5E6C8] text-sm placeholder:opacity-20 leading-relaxed
-                     focus:outline-none focus:border-[#F5C842]/40 resize-none transition-colors"
+          className="w-full bg-[#EEF2FA] border border-[#C8D4EC] rounded-xl p-4
+                     text-[#1A2038] text-sm placeholder:text-[#8A9AB8] leading-relaxed
+                     focus:outline-none focus:border-[#6A9FD8] resize-none transition-colors"
         />
-        <p className="text-[#F5E6C8] text-xs opacity-20 text-right">
-          {entryText.length > 0 ? `${entryText.length} characters` : ''}
-        </p>
+        {entryText.length > 0 && (
+          <p className="text-[#8A9AB8] text-xs text-right">{entryText.length} characters</p>
+        )}
       </div>
 
       {/* Or speak it */}
       <div className="flex flex-col gap-3">
-        <p className="text-[#F5E6C8] text-xs opacity-40 uppercase tracking-widest">
-          Or speak it
-        </p>
+        <p className="text-[#8A9AB8] text-xs uppercase tracking-widest">Or speak it</p>
         <div className="flex items-center gap-4">
           <button
             onClick={recordingVoice ? stopVoice : startVoice}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200
+            className={`w-14 h-14 rounded-full flex items-center justify-center
+                        transition-all duration-200
               ${recordingVoice
-                ? 'bg-red-500 hover:bg-red-400 scale-110'
-                : 'bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#F5C842]/40'
+                ? 'bg-[#D95050] scale-110 mic-recording'
+                : 'bg-white border border-[#C8D4EC] hover:border-[#6A9FD8] knob'
               }`}
           >
             {recordingVoice
-              ? <Square size={20} className="text-white" />
-              : <Mic size={20} className="text-[#F5C842]" />
+              ? <Square size={18} className="text-white" />
+              : <Mic size={18} className="text-[#4A8FD9]" />
             }
           </button>
 
           {recordingVoice && (
             <div className="flex items-center gap-3">
-              {/* Live pulse bars */}
               <div className="flex items-end gap-0.5 h-6">
                 {Array.from({ length: 12 }, (_, i) => (
                   <div
                     key={i}
-                    className="w-1 rounded-full bg-red-400 wave-bar"
+                    className="w-1 rounded-full bg-[#D95050] wave-bar"
                     style={{
                       height: `${30 + Math.random() * 70}%`,
                       animationDelay: `${i * 0.07}s`,
@@ -272,19 +271,19 @@ export default function JournalScreen() {
                   />
                 ))}
               </div>
-              <span className="text-red-400 font-mono text-sm">{fmt(voiceSeconds)}</span>
+              <span className="text-[#D95050] font-mono text-sm">{fmt(voiceSeconds)}</span>
             </div>
           )}
 
           {voiceBlobUrl && !recordingVoice && (
             <div className="flex items-center gap-3 flex-1">
-              <Volume2 size={16} className="text-[#F5C842] shrink-0" />
+              <Volume2 size={16} className="text-[#4A8FD9] shrink-0" />
               <audio controls src={voiceBlobUrl} className="flex-1 h-8" />
             </div>
           )}
 
           {!recordingVoice && !voiceBlobUrl && (
-            <p className="text-[#F5E6C8] text-xs opacity-30">
+            <p className="text-[#8A9AB8] text-xs">
               Tap to record a voice note instead
             </p>
           )}
@@ -295,17 +294,17 @@ export default function JournalScreen() {
       <button
         onClick={saveEntry}
         disabled={!canSave}
-        className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-semibold
+        className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-medium
                     text-sm transition-all duration-300
                     ${saved
-                      ? 'bg-green-500/20 border border-green-500/40 text-green-400'
+                      ? 'bg-[#4AAE8C]/15 border border-[#4AAE8C]/40 text-[#4AAE8C] save-burst'
                       : canSave
-                      ? 'bg-[#F5C842] text-[#0D0D0D] hover:bg-yellow-300'
-                      : 'bg-[#1A1A1A] border border-[#2A2A2A] text-[#F5E6C8] opacity-20 cursor-not-allowed'
+                      ? 'bg-[#4A8FD9] text-white hover:bg-[#3A7FC9] knob'
+                      : 'bg-white border border-[#C8D4EC] text-[#8A9AB8] cursor-not-allowed'
                     }`}
       >
         {saved
-          ? <><Check size={16} /> TIM received that. Thank you.</>
+          ? <><Check size={16} /> {getJournalDialogue('saved')}</>
           : 'Give this to TIM'
         }
       </button>
@@ -315,8 +314,8 @@ export default function JournalScreen() {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => setShowHistory(v => !v)}
-            className="flex items-center gap-2 text-[#F5E6C8] text-xs opacity-40
-                       hover:opacity-70 transition-all"
+            className="flex items-center gap-2 text-[#8A9AB8] text-xs
+                       hover:text-[#5A6A8A] transition-all"
           >
             <ChevronDown
               size={14}
@@ -330,37 +329,36 @@ export default function JournalScreen() {
               {entries.slice(0, 10).map(entry => (
                 <div
                   key={entry.id}
-                  className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex flex-col gap-2"
+                  className="bg-white border border-[#C8D4EC] rounded-xl p-4 flex flex-col gap-2
+                             card-enter"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-[#F5E6C8] text-xs opacity-40">{entry.date}</span>
+                      <span className="text-[#8A9AB8] text-xs">{entry.date}</span>
                       {entry.mood && (
                         <span
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            backgroundColor: entry.mood.color + '30',
-                            color: entry.mood.color,
-                          }}
+                          className="text-[10px] px-2 py-0.5 rounded-full font-medium text-white"
+                          style={{ backgroundColor: entry.mood.color }}
                         >
                           {entry.mood.label}
                         </span>
                       )}
                       {entry.hasVoice && (
-                        <span className="text-[10px] bg-[#F5C842]/10 text-[#F5C842] px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-[#D6E8F8] text-[#4A8FD9]
+                                         px-2 py-0.5 rounded-full border border-[#B8C8E0]">
                           Voice
                         </span>
                       )}
                     </div>
-                    <span className="text-[#F5E6C8] text-[10px] opacity-30 uppercase tracking-wider">
-                      {PROMPT_TYPES.find(p => p.id === entry.promptType)?.emoji}
+                    <span className="text-[#8A9AB8] text-[10px] uppercase tracking-wider">
+                      {PROMPT_TYPES.find(p => p.id === entry.promptType)?.label}
                     </span>
                   </div>
-                  <p className="text-[#F5E6C8] text-xs opacity-50 italic line-clamp-2">
+                  <p className="text-[#8A9AB8] text-xs italic line-clamp-2">
                     "{entry.prompt}"
                   </p>
                   {entry.text && (
-                    <p className="text-[#F5E6C8] text-sm opacity-70 leading-relaxed line-clamp-3">
+                    <p className="text-[#5A6A8A] text-sm leading-relaxed line-clamp-3">
                       {entry.text}
                     </p>
                   )}
