@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Mic, Music2, BookHeart } from 'lucide-react'
+import { Mic, Music2, BookHeart, NotebookPen } from 'lucide-react'
 
 const links = [
-  { to: '/record',   label: 'Record',   Icon: Mic        },
-  { to: '/create',   label: 'Create',   Icon: Music2     },
-  { to: '/memories', label: 'Memories', Icon: BookHeart  },
+  { to: '/record',   label: 'Record',   Icon: Mic          },
+  { to: '/create',   label: 'Create',   Icon: Music2       },
+  { to: '/journal',  label: 'Journal',  Icon: NotebookPen  },
+  { to: '/memories', label: 'Memories', Icon: BookHeart    },
 ]
 
 export default function Nav() {

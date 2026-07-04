@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Nav from './components/Nav'
 import RecordScreen from './screens/RecordScreen'
 import CreateScreen from './screens/CreateScreen'
+import JournalScreen from './screens/JournalScreen'
 import MemoryScreen from './screens/MemoryScreen'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/record" replace />} />
             <Route path="/record" element={<RecordScreen />} />
             <Route path="/create" element={<CreateScreen />} />
+            <Route path="/journal" element={<JournalScreen />} />
             <Route path="/memories" element={<MemoryScreen />} />
           </Routes>
         </main>
