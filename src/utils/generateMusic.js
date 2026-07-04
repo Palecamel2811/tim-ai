@@ -1,8 +1,31 @@
 /**
- * generateMusic — calls the Replicate MusicGen API via our Vercel serverless proxy.
- * Takes the detected notes + style choice and returns a URL to the generated audio.
+ * uploadBlob — uploads the recorded hum blob to Replicate's file upload API,
+ * returning a public URL that MusicGen can fetch for melody conditioning.
  */
-export async function generateMusic({ notes, style, durationSeconds = 8 }) {
+async function uploadHumToReplicate(blobUrl, token) {
+  try {
+    const response = await fetch(blobUrl)
+    const blob     = await response.blob()
+
+    const uploadRes = await fetch('https://api.replicate.com/v1/files', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body:    blob,
+    })
+
+    if (!uploadRes.ok) return null
+    const data = await uploadRes.json()
+    return data.urls?.get || null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * generateMusic — calls the Replicate MusicGen API via our Vercel serverless proxy.
+ * Takes the detected notes + style choice + hum blob URL, returns generated audio URL.
+ */
+export async function generateMusic({ notes, style, durationSeconds = 15, humBlobUrl = null }) {
 
   // Analyze the hum: range, density, and movement shape the prompt
   const uniqueNotes = [...new Set(notes.map(n => n.note))]
@@ -78,10 +101,15 @@ export async function generateMusic({ notes, style, durationSeconds = 8 }) {
     'high quality professional music production, full arrangement',
   ].join(', ')
 
+  // Pass the hum blob URL so the backend can use it for melody conditioning
   const response = await fetch('/api/generate', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ prompt, duration: durationSeconds }),
+    body:    JSON.stringify({
+      prompt,
+      duration:   durationSeconds,
+      humBlobUrl: humBlobUrl || null,
+    }),
   })
 
   if (!response.ok) {

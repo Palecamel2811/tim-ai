@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { prompt, duration = 8 } = req.body
+  const { prompt, duration = 15, humBlobUrl = null } = req.body
 
   if (!prompt) {
     return res.status(400).json({ error: 'prompt is required' })
@@ -20,6 +20,46 @@ export default async function handler(req, res) {
   }
 
   try {
+    // If a hum blob URL was provided, upload it to Replicate for melody conditioning
+    let melodyUrl = null
+    if (humBlobUrl) {
+      try {
+        const audioRes = await fetch(humBlobUrl)
+        const audioBlob = await audioRes.arrayBuffer()
+
+        const uploadRes = await fetch('https://api.replicate.com/v1/files', {
+          method:  'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type':  'audio/webm',
+          },
+          body: audioBlob,
+        })
+        if (uploadRes.ok) {
+          const fileData = await uploadRes.json()
+          melodyUrl = fileData.urls?.get || null
+        }
+      } catch (uploadErr) {
+        console.warn('Melody upload failed, falling back to text-only:', uploadErr.message)
+      }
+    }
+
+    // Build input — use melody conditioning if upload succeeded
+    const input = {
+      prompt,
+      duration,
+      output_format:          'mp3',
+      normalization_strategy: 'peak',
+    }
+
+    if (melodyUrl) {
+      // melody model: follows the actual pitch/rhythm of the hum
+      input.model_version = 'melody'
+      input.melody        = melodyUrl
+    } else {
+      input.model_version = 'stereo-large'
+    }
+
     // Step 1 — Create a prediction using the versioned API endpoint
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method:  'POST',
@@ -30,13 +70,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         version: '671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb',
-        input: {
-          prompt,
-          duration,
-          model_version:      'stereo-large',
-          output_format:      'mp3',
-          normalization_strategy: 'peak',
-        },
+        input,
       }),
     })
 
