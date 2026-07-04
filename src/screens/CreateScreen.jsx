@@ -49,7 +49,7 @@ export default function CreateScreen() {
     setTimMessage("Give me a sec… I'm building something from what you gave me.")
 
     try {
-      const url = await generateMusic({ notes, style: selectedStyle.id, durationSeconds: 8 })
+      const url = await generateMusic({ notes, style: selectedStyle.id, durationSeconds: 15 })
       setAudioUrl(url)
       setTimMessage("Here's what I heard in you. What does this remind you of?")
     } catch (err) {
