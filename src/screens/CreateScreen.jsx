@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Play, Loader2, ChevronRight } from 'lucide-react'
+import { Play, Loader2, ChevronRight, RefreshCw } from 'lucide-react'
+import { generateMusic } from '../utils/generateMusic'
 
 const STYLES = [
   { id: 'sunny',     emoji: '☀️', label: 'Sunny',     desc: 'Bright, warm, feel-good'       },
@@ -23,43 +24,55 @@ const TIM_RESPONSES = {
 export default function CreateScreen() {
   const [selectedStyle, setSelectedStyle] = useState(null)
   const [generating, setGenerating]       = useState(false)
-  const [generated, setGenerated]         = useState(false)
+  const [audioUrl, setAudioUrl]           = useState(null)
+  const [error, setError]                 = useState(null)
   const [timMessage, setTimMessage]       = useState("Pick a vibe — I'll build around what you gave me.")
   const [journalNote, setJournalNote]     = useState('')
   const [saving, setSaving]               = useState(false)
   const navigate = useNavigate()
 
   const recordingUrl = sessionStorage.getItem('tim_recording_url')
+  const notes        = JSON.parse(sessionStorage.getItem('tim_notes') || '[]')
 
   function selectStyle(style) {
     setSelectedStyle(style)
     setTimMessage(TIM_RESPONSES[style.id])
-    setGenerated(false)
+    setAudioUrl(null)
+    setError(null)
   }
 
   async function generate() {
     if (!selectedStyle) return
     setGenerating(true)
-    setTimMessage(`${TIM_RESPONSES[selectedStyle.id]}`)
+    setAudioUrl(null)
+    setError(null)
+    setTimMessage("Give me a sec… I'm building something from what you gave me.")
 
-    // Simulate generation delay (will be replaced with real Replicate API call)
-    await new Promise(r => setTimeout(r, 2800))
-
-    setGenerating(false)
-    setGenerated(true)
-    setTimMessage("Here's what I heard in you. What does this remind you of?")
+    try {
+      const url = await generateMusic({ notes, style: selectedStyle.id, durationSeconds: 8 })
+      setAudioUrl(url)
+      setTimMessage("Here's what I heard in you. What does this remind you of?")
+    } catch (err) {
+      console.error(err)
+      setError(err.message)
+      setTimMessage("Something went wrong. Want to try again?")
+    } finally {
+      setGenerating(false)
+    }
   }
 
   function saveToMemory() {
     if (!journalNote.trim()) return
     setSaving(true)
 
-    const existing = JSON.parse(localStorage.getItem('tim_memories') || '[]')
-    const newMemory = {
+    const existing   = JSON.parse(localStorage.getItem('tim_memories') || '[]')
+    const newMemory  = {
       id:        Date.now(),
       date:      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       style:     selectedStyle,
       note:      journalNote.trim(),
+      audioUrl:  audioUrl || null,
+      notes:     notes.slice(0, 10),
       createdAt: new Date().toISOString(),
     }
     localStorage.setItem('tim_memories', JSON.stringify([newMemory, ...existing]))
@@ -78,7 +91,21 @@ export default function CreateScreen() {
         "{timMessage}"
       </p>
 
-      {/* Recording playback (if available) */}
+      {/* Detected notes summary */}
+      {notes.length > 0 && (
+        <div className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
+          <p className="text-[#F5E6C8] text-xs opacity-50 mb-2 uppercase tracking-widest">Notes TIM detected in your hum</p>
+          <div className="flex flex-wrap gap-2">
+            {[...new Set(notes.map(n => n.note))].map((n, i) => (
+              <span key={i} className="text-sm bg-[#F5C842]/20 text-[#F5C842] px-3 py-1 rounded-full font-mono">
+                {n}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recording playback */}
       {recordingUrl && (
         <div className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
           <p className="text-[#F5E6C8] text-xs opacity-50 mb-2 uppercase tracking-widest">Your hum</p>
@@ -111,7 +138,7 @@ export default function CreateScreen() {
       </div>
 
       {/* Generate button */}
-      {selectedStyle && !generated && (
+      {selectedStyle && !audioUrl && (
         <button
           onClick={generate}
           disabled={generating}
@@ -125,27 +152,38 @@ export default function CreateScreen() {
         </button>
       )}
 
-      {/* Generated output */}
-      {generated && (
+      {/* Error state */}
+      {error && (
+        <div className="w-full bg-red-900/20 border border-red-500/30 rounded-2xl p-4 flex items-center justify-between">
+          <p className="text-red-400 text-sm">{error}</p>
+          <button onClick={generate} className="text-[#F5C842] text-sm flex items-center gap-1 hover:opacity-80">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
+
+      {/* Generated audio + journal */}
+      {audioUrl && (
         <div className="w-full bg-[#1A1A1A] border border-[#F5C842]/30 rounded-2xl p-5 flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{selectedStyle.emoji}</span>
-            <div>
-              <p className="text-[#F5C842] font-semibold">{selectedStyle.label} beat — generated</p>
-              <p className="text-[#F5E6C8] text-xs opacity-40">Based on your hum · {new Date().toLocaleDateString()}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{selectedStyle.emoji}</span>
+              <div>
+                <p className="text-[#F5C842] font-semibold">{selectedStyle.label} — generated</p>
+                <p className="text-[#F5E6C8] text-xs opacity-40">{new Date().toLocaleDateString()}</p>
+              </div>
             </div>
+            <button
+              onClick={generate}
+              className="text-[#F5E6C8] opacity-40 hover:opacity-80 transition-all"
+              title="Regenerate"
+            >
+              <RefreshCw size={16} />
+            </button>
           </div>
 
-          {/* Placeholder waveform for the generated track */}
-          <div className="flex items-center gap-1 h-10">
-            {Array.from({ length: 48 }, (_, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full bg-[#F5C842]"
-                style={{ height: `${20 + Math.sin(i * 0.7) * 14 + Math.sin(i * 1.3) * 10}%`, opacity: 0.7 }}
-              />
-            ))}
-          </div>
+          {/* Real audio player */}
+          <audio controls src={audioUrl} className="w-full" />
 
           {/* Journal prompt */}
           <div className="flex flex-col gap-2">

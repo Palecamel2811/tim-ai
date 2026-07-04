@@ -1,92 +1,84 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mic, Square, ChevronRight } from 'lucide-react'
+import useAudioAnalysis from '../hooks/useAudioAnalysis'
 
-// Number of waveform bars to render
 const BAR_COUNT = 32
 
 export default function RecordScreen() {
-  const [status, setStatus]       = useState('idle')   // idle | recording | done
-  const [bars, setBars]           = useState(Array(BAR_COUNT).fill(3))
-  const [seconds, setSeconds]     = useState(0)
-  const [timLabel, setTimLabel]   = useState(getTimLabel('idle'))
+  const [status, setStatus]   = useState('idle')   // idle | recording | done
+  const [bars, setBars]       = useState(Array(BAR_COUNT).fill(3))
+  const [seconds, setSeconds] = useState(0)
+  const timerRef              = useRef(null)
+  const animFrameRef          = useRef(null)
+  const analyserVisuRef       = useRef(null)  // separate analyser just for the waveform bars
+  const audioCtxVisuRef       = useRef(null)
+  const streamVisuRef         = useRef(null)
+  const navigate              = useNavigate()
 
-  const mediaRecorderRef = useRef(null)
-  const chunksRef        = useRef([])
-  const analyserRef      = useRef(null)
-  const animFrameRef     = useRef(null)
-  const timerRef         = useRef(null)
-  const audioBlobRef     = useRef(null)
-  const navigate         = useNavigate()
+  const { recording, notes, startAnalysis, stopAnalysis } = useAudioAnalysis()
 
-  // Cleanup on unmount
+  const timLabels = {
+    idle:      "Hey — hum something. Anything. I'm listening.",
+    recording: "I hear you… keep going.",
+    done:      "Got it. Let's make something from that.",
+  }
+
   useEffect(() => () => {
     cancelAnimationFrame(animFrameRef.current)
     clearInterval(timerRef.current)
+    audioCtxVisuRef.current?.close()
   }, [])
 
-  function getTimLabel(s) {
-    if (s === 'idle')      return "Hey — hum something. Anything. I'm listening."
-    if (s === 'recording') return "I hear you… keep going."
-    if (s === 'done')      return "Got it. Let's make something from that."
-    return ''
-  }
-
   async function startRecording() {
-    chunksRef.current = []
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // Start pitch analysis (handles mic + MediaRecorder internally)
+    await startAnalysis()
 
-    // Set up analyser for live waveform
+    // Separate stream just for the visual waveform bars
+    const stream   = await navigator.mediaDevices.getUserMedia({ audio: true })
+    streamVisuRef.current = stream
     const ctx      = new AudioContext()
     const source   = ctx.createMediaStreamSource(stream)
     const analyser = ctx.createAnalyser()
     analyser.fftSize = BAR_COUNT * 2
     source.connect(analyser)
-    analyserRef.current = analyser
+    audioCtxVisuRef.current  = ctx
+    analyserVisuRef.current  = analyser
 
-    const recorder = new MediaRecorder(stream)
-    mediaRecorderRef.current = recorder
-
-    recorder.ondataavailable = e => chunksRef.current.push(e.data)
-    recorder.onstop = () => {
-      audioBlobRef.current = new Blob(chunksRef.current, { type: 'audio/webm' })
-      stream.getTracks().forEach(t => t.stop())
-      cancelAnimationFrame(animFrameRef.current)
-      setBars(Array(BAR_COUNT).fill(3))
-    }
-
-    recorder.start()
     setStatus('recording')
-    setTimLabel(getTimLabel('recording'))
     setSeconds(0)
-
-    // Timer
     timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000)
 
-    // Live waveform animation
     const dataArr = new Uint8Array(analyser.frequencyBinCount)
     function draw() {
       animFrameRef.current = requestAnimationFrame(draw)
       analyser.getByteFrequencyData(dataArr)
-      const heights = Array.from(dataArr).map(v => Math.max(3, (v / 255) * 100))
-      setBars(heights)
+      setBars(Array.from(dataArr).map(v => Math.max(3, (v / 255) * 100)))
     }
     draw()
   }
 
-  function stopRecording() {
-    mediaRecorderRef.current?.stop()
+  async function stopRecording() {
     clearInterval(timerRef.current)
+    cancelAnimationFrame(animFrameRef.current)
+    setBars(Array(BAR_COUNT).fill(3))
+    streamVisuRef.current?.getTracks().forEach(t => t.stop())
+    audioCtxVisuRef.current?.close()
+
+    const { notes: detectedNotes, blob } = await stopAnalysis()
+
+    // Pass recording + notes to Create screen via sessionStorage
+    if (blob) {
+      const url = URL.createObjectURL(blob)
+      sessionStorage.setItem('tim_recording_url', url)
+    }
+    sessionStorage.setItem('tim_notes', JSON.stringify(detectedNotes))
+    sessionStorage.setItem('tim_recording_seconds', seconds)
+
     setStatus('done')
-    setTimLabel(getTimLabel('done'))
   }
 
   function handleNext() {
-    if (!audioBlobRef.current) return
-    // Store blob URL for Create screen to pick up
-    const url = URL.createObjectURL(audioBlobRef.current)
-    sessionStorage.setItem('tim_recording_url', url)
-    sessionStorage.setItem('tim_recording_seconds', seconds)
     navigate('/create')
   }
 
@@ -97,7 +89,7 @@ export default function RecordScreen() {
 
       {/* TIM's voice */}
       <p className="text-[#F5E6C8] text-lg text-center max-w-sm opacity-80 italic transition-all duration-500">
-        "{timLabel}"
+        "{timLabels[status]}"
       </p>
 
       {/* Waveform visualizer */}
@@ -110,11 +102,22 @@ export default function RecordScreen() {
               width: '6px',
               height: `${h}%`,
               opacity: status === 'recording' ? 1 : 0.25,
-              animationDelay: `${(i * 0.8) / BAR_COUNT}s`,
             }}
           />
         ))}
       </div>
+
+      {/* Detected notes badge */}
+      {status === 'recording' && notes.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap justify-center max-w-xs">
+          <span className="text-[#F5E6C8] text-xs opacity-40 uppercase tracking-widest">TIM hears:</span>
+          {[...new Set(notes.map(n => n.note))].slice(-6).map((n, i) => (
+            <span key={i} className="text-xs bg-[#F5C842]/20 text-[#F5C842] px-2 py-0.5 rounded-full font-mono">
+              {n}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Timer */}
       <span className="text-[#F5C842] font-mono text-2xl tabular-nums">
@@ -145,11 +148,11 @@ export default function RecordScreen() {
       {/* Hint text */}
       <p className="text-[#F5E6C8] text-xs opacity-40 text-center">
         {status === 'idle'      && 'Tap the mic and hum a melody, sing a rhythm, or make any sound'}
-        {status === 'recording' && 'Tap the square to stop when you\'re ready'}
+        {status === 'recording' && "Tap the square to stop when you're ready"}
         {status === 'done'      && 'Happy with that? Head to Create →'}
       </p>
 
-      {/* Next button — only visible after recording */}
+      {/* Next button */}
       {status === 'done' && (
         <button
           onClick={handleNext}
